@@ -1,17 +1,14 @@
 package com.davideanastasia.ce
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLog
-import org.apache.spark.{HashPartitioner, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 
-/**
- * Created by davideanastasia on 29/03/2015.
- */
 object CardinalityEstimation
 {
   def main (args: Array[String]): Unit = {
     val sc = new SparkContext(
-      "local",
+      "local[*]",
       "CardinalityCounter",
       System.getenv("SPARK_HOME")
     )
