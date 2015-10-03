@@ -4,32 +4,31 @@ import com.twitter.algebird.HyperLogLogMonoid
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
 
-object CardinalityEstimationAlgebird
-{
+object CardinalityEstimationAlgebird {
+
   def main (args: Array[String]): Unit = {
-    val sc = new SparkContext(
-      "local[*]",
-      "CardinalityCounterAlgebird",
-      System.getenv("SPARK_HOME")
-    )
+    val conf = new SparkConf().setAppName("CardinalityCounterAlgebird")
+    val sc = new SparkContext(conf)
 
     val dataset = sc.textFile(args(0))
 
     val intToString = dataset
-      .map(_.split("\t"))
-      .map(elem => (elem(1).toInt, elem(0)))
+      .map(elem => {
+        val tokens = elem.split("\t")
 
-    // val hll = new HyperLogLogMonoid(16)
+        (tokens(1).toInt, tokens(0))
+      })
+
+    val hll = new HyperLogLogMonoid(bits = 12)
     val cardinalityEstimation = intToString
-      .map(elem => (elem._1, new HyperLogLogMonoid(16).toHLL(elem._2)))
-      .reduceByKey(_ + _)
-      .map(
-        elem => (elem._1, elem._2.estimatedSize.toInt)
-      )
+      .map { case (k, v) => (k, hll.toHLL(v)) }
+      .reduceByKey(hll.plus)
 
     cardinalityEstimation
-      .map(
-        elem => elem._1.toString + "\t" + elem._2.toString
-      ).saveAsTextFile(args(1))
+      .repartition(1)
+      .map {
+        case (k, v) => Array(k, v.estimatedSize.toInt).mkString("\t")
+      }
+      .saveAsTextFile(args(1))
   }
 }
