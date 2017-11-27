@@ -1,8 +1,7 @@
-package com.davideanastasia.ce
+package com.davideanastasia
 
 import com.twitter.algebird.HyperLogLogMonoid
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.SparkContext._
 
 object CardinalityEstimationAlgebird {
 
